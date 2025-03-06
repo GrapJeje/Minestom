@@ -8,6 +8,7 @@ import net.minestom.server.event.player.PlayerSkinInitEvent;
 import net.minestom.server.extras.MojangAuth;
 import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.instance.InstanceManager;
+import net.minestom.server.instance.LightingChunk;
 import net.minestom.server.instance.block.Block;
 import nl.grapjeje.minestom.Listeners.EventListener;
 import nl.grapjeje.minestom.Listeners.Player.PlayerJoinListener;
@@ -52,5 +53,7 @@ class ServerSetup {
 
     public void registerGeneration() {
         Server.container.setGenerator(unit -> unit.modifier().fillHeight(0, 40, Block.GRASS_BLOCK));
+
+        Server.container.setChunkSupplier(LightingChunk::new);
     }
 }
