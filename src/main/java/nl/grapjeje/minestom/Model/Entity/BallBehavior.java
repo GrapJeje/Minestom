@@ -57,8 +57,8 @@ public class BallBehavior extends Entity implements BallEntity {
         System.out.println("Ball position after kick: " + ballEntity.getPosition());
 
         kicker.sendMessage(Text.getColoredMessage(TextColor.fromHexString("#1FC077"), "Bal is getrapt! (Power: ")
-                .append(Text.getColoredMessage(TextColor.fromHexString("#D48341"), String.valueOf(this.getKickPower(kicker)))
-                        .append(Text.getColoredMessage(TextColor.fromHexString("#1FC077"), ")"))));
+                .append(Text.getColoredMessage(TextColor.fromHexString("#D48341"), String.valueOf(power)))
+                        .append(Text.getColoredMessage(TextColor.fromHexString("#1FC077"), ")")));
 
         Cooldown.addCooldown(kicker);
     }
@@ -86,8 +86,9 @@ public class BallBehavior extends Entity implements BallEntity {
             );
 
             Server.container.getPlayers().forEach(player -> player.sendPacket(packet));
+            kicker.sendMessage(Text.getColoredMessage(TextColor.fromHexString("#c01200"), "Super schot!"));
 
-            return random.nextFloat(10, 15);
+            return 10;
         }
 
         return kicker.isSprinting() ? random.nextFloat(5, 10)
