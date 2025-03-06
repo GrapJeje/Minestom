@@ -2,19 +2,14 @@ package nl.grapjeje.minestom;
 
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.command.builder.Command;
-import net.minestom.server.event.Event;
-import net.minestom.server.event.GlobalEventHandler;
-import net.minestom.server.event.player.AsyncPlayerConfigurationEvent;
-import net.minestom.server.event.player.PlayerSkinInitEvent;
+import net.minestom.server.event.*;
+import net.minestom.server.event.player.*;
 import net.minestom.server.extras.MojangAuth;
-import net.minestom.server.instance.InstanceContainer;
-import net.minestom.server.instance.InstanceManager;
-import net.minestom.server.instance.LightingChunk;
+import net.minestom.server.instance.*;
 import net.minestom.server.instance.block.Block;
-import nl.grapjeje.minestom.Commands.Fly;
+import nl.grapjeje.minestom.Commands.*;
 import nl.grapjeje.minestom.Listeners.EventListener;
-import nl.grapjeje.minestom.Listeners.Player.PlayerJoinListener;
-import nl.grapjeje.minestom.Listeners.Player.PlayerSkinListener;
+import nl.grapjeje.minestom.Listeners.Player.*;
 import org.jetbrains.annotations.NotNull;
 
 public class Server {
@@ -46,6 +41,7 @@ class ServerSetup {
     public void registerListeners() {
         eventHandler = MinecraftServer.getGlobalEventHandler();
 
+        this.registerListener(PlayerEntityInteractEvent.class, new PlayerEntityInteractListener());
         this.registerListener(AsyncPlayerConfigurationEvent.class, new PlayerJoinListener());
         this.registerListener(PlayerSkinInitEvent.class, new PlayerSkinListener());
     }
@@ -55,7 +51,9 @@ class ServerSetup {
     }
 
     public void registerCommands() {
+        this.registerCommand(new BallCommand());
         this.registerCommand(new Fly());
+        this.registerCommand(new Gamemode());
     }
 
     private void registerCommand(Command command) {
