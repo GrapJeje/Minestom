@@ -1,6 +1,7 @@
 package nl.grapjeje.minestom;
 
 import net.minestom.server.MinecraftServer;
+import net.minestom.server.command.builder.Command;
 import net.minestom.server.event.Event;
 import net.minestom.server.event.GlobalEventHandler;
 import net.minestom.server.event.player.AsyncPlayerConfigurationEvent;
@@ -10,6 +11,7 @@ import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.instance.InstanceManager;
 import net.minestom.server.instance.LightingChunk;
 import net.minestom.server.instance.block.Block;
+import nl.grapjeje.minestom.Commands.Fly;
 import nl.grapjeje.minestom.Listeners.EventListener;
 import nl.grapjeje.minestom.Listeners.Player.PlayerJoinListener;
 import nl.grapjeje.minestom.Listeners.Player.PlayerSkinListener;
@@ -31,6 +33,7 @@ public class Server {
         ServerSetup setup = new ServerSetup();
         setup.registerGeneration();
         setup.registerListeners();
+        setup.registerCommands();
 
         MojangAuth.init();
         server.start("0.0.0.0", 25565);
@@ -49,6 +52,14 @@ class ServerSetup {
 
     private <E extends Event> void registerListener(@NotNull Class<E> eventType, @NotNull EventListener<E> listener) {
         eventHandler.addListener(eventType, event -> listener.toConsumer().accept(event));
+    }
+
+    public void registerCommands() {
+        this.registerCommand(new Fly());
+    }
+
+    private void registerCommand(Command command) {
+        MinecraftServer.getCommandManager().register(command);
     }
 
     public void registerGeneration() {
