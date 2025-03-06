@@ -3,7 +3,7 @@ package nl.grapjeje.minestom.Listeners.Player;
 import net.minestom.server.entity.*;
 import net.minestom.server.event.player.PlayerEntityInteractEvent;
 import nl.grapjeje.minestom.Listeners.EventListener;
-import nl.grapjeje.minestom.Model.Ball;
+import nl.grapjeje.minestom.Model.Entity.BallBehavior;
 
 public class PlayerEntityInteractListener implements EventListener<PlayerEntityInteractEvent> {
 
@@ -12,10 +12,11 @@ public class PlayerEntityInteractListener implements EventListener<PlayerEntityI
         Player player = e.getPlayer();
         Entity entity = e.getTarget();
 
-        if (Ball.Cooldown.isPlayerOnCooldown(player)) return;
+        if (player.getGameMode() == GameMode.SPECTATOR) return;
+        if (BallBehavior.Cooldown.isPlayerOnCooldown(player)) return;
         if (entity.getEntityType() != EntityType.FALLING_BLOCK) return;
         if (entity.getVelocity().y() > player.getVelocity().y() + 1) return;
 
-        Ball.instance.kick(player, Ball.instance.getKickPower(player));
+        BallBehavior.instance.kick(entity, player, BallBehavior.instance.getKickPower(player));
     }
 }
