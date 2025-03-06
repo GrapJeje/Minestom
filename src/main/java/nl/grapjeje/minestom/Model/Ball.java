@@ -1,20 +1,22 @@
 package nl.grapjeje.minestom.Model;
 
+import net.kyori.adventure.text.format.TextColor;
 import net.minestom.server.MinecraftServer;
-import net.minestom.server.collision.BoundingBox;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityType;
-import net.minestom.server.entity.metadata.display.BlockDisplayMeta;
+import net.minestom.server.entity.metadata.other.FallingBlockMeta;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.entity.Player;
 import net.minestom.server.utils.time.TimeUnit;
 import nl.grapjeje.minestom.Server;
+import nl.grapjeje.minestom.Util.Text;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
 
 public class Ball {
@@ -27,8 +29,8 @@ public class Ball {
         blockDisplayEntity = new Entity(EntityType.FALLING_BLOCK);
         blockDisplayEntity.setInstance(instance, pos);
 
-        BlockDisplayMeta meta = (BlockDisplayMeta) blockDisplayEntity.getEntityMeta();
-        meta.setBlockState(Block.STONE);
+        FallingBlockMeta meta = (FallingBlockMeta) blockDisplayEntity.getEntityMeta();
+        meta.setBlock(Block.STONE);
     }
 
     public void kick(@NotNull Player player, float power) {
@@ -43,7 +45,21 @@ public class Ball {
         Vec force = new Vec(direction.x() * horizontalForce, verticalForce, direction.z() * horizontalForce);
         blockDisplayEntity.setVelocity(force);
 
+        player.sendMessage(Text.getColoredMessage(TextColor.fromHexString("#1FC077"), "Bal is getrapt! (Power: ")
+                .append(Text.getColoredMessage(TextColor.fromHexString("#D48341"), String.valueOf(this.getKickPower(player)))
+                        .append(Text.getColoredMessage(TextColor.fromHexString("#1FC077"), ")"))));
+
         Cooldown.addCooldown(player);
+    }
+
+    public float getKickPower(Player player) {
+        final Random random = new Random();
+
+        if (player == null) return random.nextFloat(0.1f, 10);
+
+        return player.isSprinting() ? random.nextFloat(5, 10)
+                : player.isSneaking() ? random.nextFloat(0.1f, 5)
+                : random.nextFloat(0.1f, 10);
     }
 
     public static class Cooldown {

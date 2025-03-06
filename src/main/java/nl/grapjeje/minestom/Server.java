@@ -3,6 +3,7 @@ package nl.grapjeje.minestom;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.command.builder.Command;
 import net.minestom.server.event.*;
+import net.minestom.server.event.entity.EntityAttackEvent;
 import net.minestom.server.event.player.*;
 import net.minestom.server.extras.MojangAuth;
 import net.minestom.server.instance.*;
@@ -41,6 +42,7 @@ class ServerSetup {
     public void registerListeners() {
         eventHandler = MinecraftServer.getGlobalEventHandler();
 
+        this.registerListener(EntityAttackEvent.class, new PlayerEntityHitListener());
         this.registerListener(PlayerEntityInteractEvent.class, new PlayerEntityInteractListener());
         this.registerListener(AsyncPlayerConfigurationEvent.class, new PlayerJoinListener());
         this.registerListener(PlayerSkinInitEvent.class, new PlayerSkinListener());
