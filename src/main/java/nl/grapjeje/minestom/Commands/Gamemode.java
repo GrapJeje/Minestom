@@ -16,7 +16,7 @@ public class Gamemode extends Command {
         var gamemodeArg = ArgumentType.String("gamemode");
 
         this.setDefaultExecutor((sender, context) ->
-                sender.sendMessage(Text.getColoredMessage(TextColor.fromHexString("#1FC077"), "Da kan nie")));
+                sender.sendMessage(Text.getColoredMessage(TextColor.fromHexString("#c01200"), "Da kan nie")));
 
         this.addSyntax((sender, context) -> {
             if (!(sender instanceof Player player)) return;
@@ -31,7 +31,7 @@ public class Gamemode extends Command {
             };
 
             if (gameMode == null) {
-                player.sendMessage(Text.getColoredMessage(TextColor.fromHexString("#1FC077"), "Da kan nie"));
+                player.sendMessage(Text.getColoredMessage(TextColor.fromHexString("#c01200"), "Da kan nie"));
                 return;
             }
 
