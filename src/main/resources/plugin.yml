@@ -1,6 +1,0 @@
-name: Minestom
-version: '1.0-SNAPSHOT'
-main: nl.grapjeje.minestom.Minestom
-api-version: '1.21'
-authors: [ GrapJeje ]
-website: grapjeje.nl
