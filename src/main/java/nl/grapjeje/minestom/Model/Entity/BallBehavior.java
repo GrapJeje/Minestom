@@ -22,6 +22,10 @@ import java.util.Set;
 
 public class BallBehavior extends Entity implements BallEntity {
     public static BallEntity instance;
+    private boolean isKicked = false;
+    private Vec lastVelocity = Vec.ZERO;
+    private final double gravity = 0.08;
+    private final double friction = 0.99;
 
     public BallBehavior(Pos position) {
         super(EntityType.FALLING_BLOCK);
@@ -36,12 +40,70 @@ public class BallBehavior extends Entity implements BallEntity {
 
         this.setNoGravity(false);
         this.setBoundingBox(.5f, .5f, .5f);
+
+        // Handle physics
+        MinecraftServer.getSchedulerManager().buildTask(() -> {
+            if (this.isRemoved()) return;
+
+            Vec velocity = this.getVelocity();
+            velocity = velocity.withY(velocity.y() - gravity);
+
+            if (this.isOnGround() && isKicked) {
+                velocity = velocity.mul(friction, 1, friction);
+                if (velocity.length() < 0.1) {
+                    velocity = Vec.ZERO;
+                    isKicked = false;
+                }
+            }
+
+            Vec finalVelocity = velocity;
+            MinecraftServer.getSchedulerManager().buildTask(() -> {
+                this.setVelocity(finalVelocity);
+                lastVelocity = finalVelocity;
+            }).schedule();
+
+        }).repeat(1, TimeUnit.SERVER_TICK).schedule();
+    }
+
+    @Override
+    public void kick(Entity ballEntity, Player kicker) {
+        this.kick(ballEntity, kicker, this.getKickPower(kicker));
     }
 
     @Override
     public void kick(Entity ballEntity, Player kicker, float power) {
+        Cooldown.addCooldown(kicker);
+
+        // Check if the ball is above the player
+        if (ballEntity.getPosition().y() > kicker.getPosition().y() + .8f) {
+            kicker.sendMessage(Text.getColoredMessage(TextColor.fromHexString("#c0bf1d"), "Je benen zijn te kort"));
+            return;
+        }
+
         // Calculate the power of the kick
         power = Math.max(0, Math.min(power, 10));
+
+        if (!kicker.isOnGround()) {
+            Random random = new Random();
+            float chance = random.nextFloat();
+
+            // Get super kick chance
+            if (chance < 0.33f) {
+                ParticlePacket packet = new ParticlePacket(
+                        Particle.CRIT,
+                        false,
+                        position.x(), position.y(), position.z(),
+                        0.5f, 0.5f, 0.5f,
+                        0.1f,
+                        10
+                );
+
+                Server.container.getPlayers().forEach(player -> player.sendPacket(packet));
+                kicker.sendMessage(Text.getColoredMessage(TextColor.fromHexString("#c0bf1d"), "Super schot!"));
+
+                power = 10;
+            }
+        }
 
         Vec direction = kicker.getPosition().direction();
         direction = new Vec(direction.x(), 0, direction.z()).normalize();
@@ -53,43 +115,15 @@ public class BallBehavior extends Entity implements BallEntity {
         Vec force = new Vec(direction.x() * horizontalForce, verticalForce, direction.z() * horizontalForce);
         ballEntity.setVelocity(force);
 
-        System.out.println("Ball kicked with force: " + force);
-        System.out.println("Ball position after kick: " + ballEntity.getPosition());
-
-        kicker.sendMessage(Text.getColoredMessage(TextColor.fromHexString("#1FC077"), "Bal is getrapt! (Power: ")
-                .append(Text.getColoredMessage(TextColor.fromHexString("#D48341"), String.valueOf(power)))
-                        .append(Text.getColoredMessage(TextColor.fromHexString("#1FC077"), ")")));
-
-        Cooldown.addCooldown(kicker);
+        isKicked = true;
+        lastVelocity = force;
     }
 
-    /**
-     * Get the power of the kick based on the player's state
-     *
-     * @param kicker The player who kicked the ball
-     * @return The power of the kick
-     */
     @Override
     public float getKickPower(Player kicker) {
         final Random random = new Random();
 
         if (kicker == null) return random.nextFloat(0.1f, 10);
-
-        if (!kicker.isOnGround()) {
-            ParticlePacket packet = new ParticlePacket(
-                    Particle.CRIT,
-                    false,
-                    position.x(), position.y(), position.z(),
-                    0.5f, 0.5f, 0.5f,
-                    0.1f,
-                    10
-            );
-
-            Server.container.getPlayers().forEach(player -> player.sendPacket(packet));
-            kicker.sendMessage(Text.getColoredMessage(TextColor.fromHexString("#c01200"), "Super schot!"));
-
-            return 10;
-        }
 
         return kicker.isSprinting() ? random.nextFloat(5, 10)
                 : kicker.isSneaking() ? random.nextFloat(0.1f, 5)
@@ -98,7 +132,10 @@ public class BallBehavior extends Entity implements BallEntity {
 
     @Override
     public void collide(Entity ballEntity, Entity collidedWith) {
-
+        // Handle collisions
+        if (collidedWith instanceof Player) {
+            System.out.println("Ball collided with player: " + collidedWith.getEntityType());
+        }
     }
 
     /**

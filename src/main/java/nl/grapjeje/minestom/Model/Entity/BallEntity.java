@@ -4,6 +4,8 @@ import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.Player;
 
 public interface BallEntity {
+    void kick(Entity ballEntity, Player kicker);
+
     void kick(Entity ballEntity, Player kicker, float power);
 
     /**

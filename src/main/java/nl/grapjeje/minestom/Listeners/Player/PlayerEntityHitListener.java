@@ -20,8 +20,7 @@ public class PlayerEntityHitListener implements EventListener<EntityAttackEvent>
 
         if (player.getGameMode() == GameMode.SPECTATOR) return;
         if (BallBehavior.Cooldown.isPlayerOnCooldown(player)) return;
-        if (damagedEntity.getVelocity().y() > player.getVelocity().y() + 1) return;
 
-        BallBehavior.instance.kick(damagedEntity, player, BallBehavior.instance.getKickPower(player));
+        BallBehavior.instance.kick(damagedEntity, player);
     }
 }
