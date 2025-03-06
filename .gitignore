@@ -1,0 +1,7 @@
+.idea/
+/target
+libs/
+.run/
+*.iml
+dependency-reduced-pom.xml
+BuildTools.log.txt
