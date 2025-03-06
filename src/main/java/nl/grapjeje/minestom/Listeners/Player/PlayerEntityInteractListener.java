@@ -18,6 +18,7 @@ public class PlayerEntityInteractListener implements EventListener<PlayerEntityI
 
         if (Ball.Cooldown.isPlayerOnCooldown(player)) return;
         if (entity.getEntityType() != EntityType.FALLING_BLOCK) return;
+        if (entity.getVelocity().y() > player.getVelocity().y()) return;
 
         Ball.instance.kick(player, this.getKickPower(player));
         player.sendMessage(Text.getColoredMessage(TextColor.fromHexString("#1FC077"), "Bal is getrapt! (Power: ")
