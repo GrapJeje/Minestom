@@ -2,6 +2,7 @@ package nl.grapjeje.minestom.Model.Entity;
 
 import net.kyori.adventure.text.format.TextColor;
 import net.minestom.server.MinecraftServer;
+import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.Entity;
@@ -47,6 +48,8 @@ public class BallBehavior extends Entity implements BallEntity {
 
             Vec velocity = this.getVelocity();
             velocity = velocity.withY(velocity.y() - gravity);
+
+            this.checkForCollisions();
 
             if (this.isOnGround() && isKicked) {
                 velocity = velocity.mul(friction, 1, friction);
@@ -131,10 +134,23 @@ public class BallBehavior extends Entity implements BallEntity {
     }
 
     @Override
-    public void collide(Entity ballEntity, Entity collidedWith) {
-        // Handle collisions
-        if (collidedWith instanceof Player) {
-            System.out.println("Ball collided with player: " + collidedWith.getEntityType());
+    public void collide(Player player) {
+        Vec direction = player.getPosition().direction();
+
+        this.setVelocity(direction.mul(7f));
+        this.isKicked = true;
+    }
+
+    @Override
+    public void checkForCollisions() {
+        for (Entity entity : this.getInstance().getEntities()) {
+            if (!(entity instanceof Player)) continue;
+            Point relativePosition = entity.getPosition().sub(this.getPosition());
+
+            // Check if the bounding boxes collide
+            if (this.getBoundingBox().intersectBox(relativePosition, entity.getBoundingBox())) {
+                this.collide((Player) entity);
+            }
         }
     }
 

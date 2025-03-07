@@ -4,6 +4,7 @@ import net.minestom.server.MinecraftServer;
 import net.minestom.server.command.builder.Command;
 import net.minestom.server.event.*;
 import net.minestom.server.event.entity.EntityAttackEvent;
+import net.minestom.server.event.entity.EntityTickEvent;
 import net.minestom.server.event.player.*;
 import net.minestom.server.extras.MojangAuth;
 import net.minestom.server.instance.*;
@@ -42,6 +43,7 @@ class ServerSetup {
     public void registerListeners() {
         eventHandler = MinecraftServer.getGlobalEventHandler();
 
+        this.registerListener(EntityTickEvent.class, new PlayerEntityCollideListener());
         this.registerListener(EntityAttackEvent.class, new PlayerEntityHitListener());
         this.registerListener(PlayerEntityInteractEvent.class, new PlayerEntityInteractListener());
         this.registerListener(AsyncPlayerConfigurationEvent.class, new PlayerJoinListener());
@@ -49,6 +51,7 @@ class ServerSetup {
     }
 
     private <E extends Event> void registerListener(@NotNull Class<E> eventType, @NotNull EventListener<E> listener) {
+
         eventHandler.addListener(eventType, event -> listener.toConsumer().accept(event));
     }
 

@@ -16,5 +16,7 @@ public interface BallEntity {
      */
     float getKickPower(Player kicker);
 
-    void collide(Entity ballEntity, Entity collidedWith);
+    void collide(Player player);
+
+    void checkForCollisions();
 }
