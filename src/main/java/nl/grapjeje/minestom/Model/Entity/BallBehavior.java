@@ -13,6 +13,7 @@ import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.network.packet.server.play.ParticlePacket;
 import net.minestom.server.particle.Particle;
+import net.minestom.server.timer.Task;
 import net.minestom.server.utils.time.TimeUnit;
 import nl.grapjeje.minestom.Server;
 import nl.grapjeje.minestom.Util.Text;
@@ -24,9 +25,15 @@ import java.util.Set;
 public class BallBehavior extends Entity implements BallEntity {
     public static BallEntity instance;
     private boolean isKicked = false;
-    private Vec lastVelocity = Vec.ZERO;
-    private final double gravity = 0.08;
-    private final double friction = 0.99;
+
+    private Pos lastBallPosition;
+    private Pos newBallPosition;
+
+    // The percentage of the velocity that is kept after a kick
+    private final double gravity = 0.33;
+
+    private Task velocityTask;
+    private Task mainTask;
 
     public BallBehavior(Pos position) {
         super(EntityType.FALLING_BLOCK);
@@ -43,45 +50,20 @@ public class BallBehavior extends Entity implements BallEntity {
         this.setBoundingBox(.5f, .5f, .5f);
 
         // Handle physics
-        MinecraftServer.getSchedulerManager().buildTask(() -> {
-            if (this.isRemoved()) return;
-
-            Vec velocity = this.getVelocity();
-            velocity = velocity.withY(velocity.y() - gravity);
-
-            this.checkForCollisions();
-
-            if (this.isOnGround() && isKicked) {
-                velocity = velocity.mul(friction, 1, friction);
-                if (velocity.length() < 0.1) {
-                    velocity = Vec.ZERO;
-                    isKicked = false;
-                }
+        mainTask = MinecraftServer.getSchedulerManager().buildTask(() -> { // TODO: Make async
+            if (this.isRemoved()) {
+                mainTask.cancel();
+                return;
             }
 
-            Vec finalVelocity = velocity;
-            MinecraftServer.getSchedulerManager().buildTask(() -> {
-                this.setVelocity(finalVelocity);
-                lastVelocity = finalVelocity;
-            }).schedule();
-
+            this.checkForCollisions();
         }).repeat(1, TimeUnit.SERVER_TICK).schedule();
     }
 
     @Override
-    public void kick(Entity ballEntity, Player kicker) {
-        this.kick(ballEntity, kicker, this.getKickPower(kicker));
-    }
-
-    @Override
-    public void kick(Entity ballEntity, Player kicker, float power) {
-        Cooldown.addCooldown(kicker);
-
-        // Check if the ball is above the player
-        if (ballEntity.getPosition().y() > kicker.getPosition().y() + .8f) {
-            kicker.sendMessage(Text.getColoredMessage(TextColor.fromHexString("#c0bf1d"), "Je benen zijn te kort"));
-            return;
-        }
+    public void setVelocity(Entity ballEntity, Player kicker, float power) {
+        // Cancel the previous task so the ball doesn't get stuck
+        if (velocityTask != null) velocityTask.cancel();
 
         // Calculate the power of the kick
         power = Math.max(0, Math.min(power, 10));
@@ -118,8 +100,43 @@ public class BallBehavior extends Entity implements BallEntity {
         Vec force = new Vec(direction.x() * horizontalForce, verticalForce, direction.z() * horizontalForce);
         ballEntity.setVelocity(force);
 
+        Vec finalDirection = direction;
+
+        // Schedule the task to apply friction and bounce
+        velocityTask = MinecraftServer.getSchedulerManager().buildTask(() -> {
+                    if (this.isOnGround() && isKicked) {
+                        // Apply bounce effect
+                        Vec newForce = new Vec(finalDirection.x() * horizontalForce * gravity,
+                                verticalForce * gravity * 0.8,
+                                finalDirection.z() * horizontalForce * gravity);
+
+                        this.setVelocity(newForce);
+
+                        isKicked = false;
+                        velocityTask.cancel();
+                    }
+                })
+                .repeat(1, TimeUnit.SERVER_TICK)
+                .schedule();
+    }
+
+    @Override
+    public void kick(Entity ballEntity, Player kicker) {
+        this.kick(ballEntity, kicker, this.getKickPower(kicker));
+    }
+
+    @Override
+    public void kick(Entity ballEntity, Player kicker, float power) {
+        Cooldown.addCooldown(kicker);
+
+        // Check if the ball is above the player
+        if (ballEntity.getPosition().y() > kicker.getPosition().y() + .8f) {
+            kicker.sendMessage(Text.getColoredMessage(TextColor.fromHexString("#c0bf1d"), "Je benen zijn te kort"));
+            return;
+        }
+
         isKicked = true;
-        lastVelocity = force;
+        this.setVelocity(ballEntity, kicker, power);
     }
 
     @Override
@@ -135,10 +152,10 @@ public class BallBehavior extends Entity implements BallEntity {
 
     @Override
     public void collide(Player player) {
+        if (velocityTask != null) velocityTask.cancel();
         Vec direction = player.getPosition().direction();
 
         this.setVelocity(direction.mul(7f));
-        this.isKicked = true;
     }
 
     @Override
