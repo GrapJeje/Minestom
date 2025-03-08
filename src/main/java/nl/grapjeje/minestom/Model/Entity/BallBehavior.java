@@ -8,7 +8,7 @@ import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.Player;
-import net.minestom.server.entity.metadata.other.FallingBlockMeta;
+import net.minestom.server.entity.metadata.display.BlockDisplayMeta;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.network.packet.server.play.ParticlePacket;
@@ -24,10 +24,8 @@ import java.util.Set;
 
 public class BallBehavior extends Entity implements BallEntity {
     public static BallEntity instance;
+    private final Entity interactionEntity;
     private boolean isKicked = false;
-
-    private Pos lastBallPosition;
-    private Pos newBallPosition;
 
     // The percentage of the velocity that is kept after a kick
     private final double gravity = 0.33;
@@ -36,28 +34,38 @@ public class BallBehavior extends Entity implements BallEntity {
     private Task mainTask;
 
     public BallBehavior(Pos position) {
-        super(EntityType.FALLING_BLOCK);
+        super(EntityType.BLOCK_DISPLAY);
 
-        Instance instance = Server.container;
-        this.setInstance(instance, position);
+        // Maak de interaction entity
+        interactionEntity = new Entity(EntityType.INTERACTION);
+        interactionEntity.setInstance(this.getInstance(), position);
+        interactionEntity.setBoundingBox(.5f, .5f, .5f); // Zelfde grootte als de bal
 
-        FallingBlockMeta meta = (FallingBlockMeta) this.getEntityMeta();
-
-        // Settings
-        meta.setBlock(Block.STONE);
+        // Instellingen voor de display entity
+        BlockDisplayMeta meta = (BlockDisplayMeta) this.getEntityMeta();
+        meta.setBlockState(Block.STONE);
+        meta.setScale(new Vec(0.5f, 0.5f, 0.5f)); // Schaal van de display entity
 
         this.setNoGravity(false);
         this.setBoundingBox(.5f, .5f, .5f);
 
-        // Handle physics
-        mainTask = MinecraftServer.getSchedulerManager().buildTask(() -> { // TODO: Make async
+        // Synchroniseer de positie van de display entity en de interaction entity
+        mainTask = MinecraftServer.getSchedulerManager().buildTask(() -> {
             if (this.isRemoved()) {
                 mainTask.cancel();
+                interactionEntity.remove();
                 return;
             }
 
+            // Synchroniseer de positie
+            interactionEntity.teleport(this.getPosition());
             this.checkForCollisions();
         }).repeat(1, TimeUnit.SERVER_TICK).schedule();
+    }
+
+    @Override
+    public Entity getInteractionEntity() {
+        return interactionEntity;
     }
 
     @Override
@@ -103,14 +111,17 @@ public class BallBehavior extends Entity implements BallEntity {
         Vec finalDirection = direction;
 
         // Schedule the task to apply friction and bounce
-        velocityTask = MinecraftServer.getSchedulerManager().buildTask(() -> {
+        velocityTask = MinecraftServer.getSchedulerManager().buildTask(() -> { // TODO: Make async
                     if (this.isOnGround() && isKicked) {
                         // Apply bounce effect
                         Vec newForce = new Vec(finalDirection.x() * horizontalForce * gravity,
                                 verticalForce * gravity * 0.8,
                                 finalDirection.z() * horizontalForce * gravity);
 
-                        this.setVelocity(newForce);
+                        MinecraftServer.getSchedulerManager().buildTask(() -> {
+                            this.setVelocity(Vec.ZERO);
+                            this.setVelocity(newForce);
+                        });
 
                         isKicked = false;
                         velocityTask.cancel();

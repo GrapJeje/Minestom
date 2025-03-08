@@ -4,6 +4,7 @@ import net.minestom.server.entity.*;
 import net.minestom.server.event.player.PlayerEntityInteractEvent;
 import nl.grapjeje.minestom.Listeners.EventListener;
 import nl.grapjeje.minestom.Model.Entity.BallBehavior;
+import nl.grapjeje.minestom.Model.Entity.BallEntity;
 
 public class PlayerEntityInteractListener implements EventListener<PlayerEntityInteractEvent> {
 
@@ -14,7 +15,7 @@ public class PlayerEntityInteractListener implements EventListener<PlayerEntityI
 
         if (player.getGameMode() == GameMode.SPECTATOR) return;
         if (BallBehavior.Cooldown.isPlayerOnCooldown(player)) return;
-        if (entity.getEntityType() != EntityType.FALLING_BLOCK) return;
+        if (!(entity instanceof BallEntity)) return;
 
         BallBehavior.instance.kick(entity, player);
     }
