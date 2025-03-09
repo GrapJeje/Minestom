@@ -27,18 +27,11 @@ public interface BallEntity {
     void checkForCollisions();
 
     static BallEntity findBallInstance(Entity entity) {
-        System.out.println("Zoeken naar bal voor entity: " + entity.getEntityType());
-
-        for (BallEntity ballEntity : ballEntities) {
-            if (ballEntity instanceof BallBehavior ball) {
-                if (ball.equals(entity) || ball.getInteractionEntity().equals(entity)) {
-                    System.out.println("Match gevonden! Dit is een bal.");
-                    return ball;
-                }
-            }
-        }
-
-        System.out.println("Geen match gevonden.");
-        return null;
+        return ballEntities.stream()
+                .filter(BallBehavior.class::isInstance)
+                .map(BallBehavior.class::cast)
+                .filter(ball -> ball.equals(entity) || ball.getInteractionEntity().equals(entity))
+                .findFirst()
+                .orElse(null);
     }
 }
