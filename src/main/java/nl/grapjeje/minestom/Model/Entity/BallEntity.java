@@ -3,6 +3,8 @@ package nl.grapjeje.minestom.Model.Entity;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.Player;
 
+import static nl.grapjeje.minestom.Model.Entity.BallBehavior.ballEntities;
+
 public interface BallEntity {
     Entity getInteractionEntity();
 
@@ -23,4 +25,20 @@ public interface BallEntity {
     void collide(Player player);
 
     void checkForCollisions();
+
+    static BallEntity findBallInstance(Entity entity) {
+        System.out.println("Zoeken naar bal voor entity: " + entity.getEntityType());
+
+        for (BallEntity ballEntity : ballEntities) {
+            if (ballEntity instanceof BallBehavior ball) {
+                if (ball.equals(entity) || ball.getInteractionEntity().equals(entity)) {
+                    System.out.println("Match gevonden! Dit is een bal.");
+                    return ball;
+                }
+            }
+        }
+
+        System.out.println("Geen match gevonden.");
+        return null;
+    }
 }

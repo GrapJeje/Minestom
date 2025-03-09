@@ -18,12 +18,10 @@ import net.minestom.server.utils.time.TimeUnit;
 import nl.grapjeje.minestom.Server;
 import nl.grapjeje.minestom.Util.Text;
 
-import java.util.HashSet;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 
 public class BallBehavior extends Entity implements BallEntity {
-    public static BallEntity instance;
+    public static List<BallEntity> ballEntities = new ArrayList<>();
     private final Entity interactionEntity;
     private boolean isKicked = false;
 
@@ -33,23 +31,22 @@ public class BallBehavior extends Entity implements BallEntity {
     private Task velocityTask;
     private Task mainTask;
 
-    public BallBehavior(Pos position) {
+    public BallBehavior(Pos position, Instance instance) {
         super(EntityType.BLOCK_DISPLAY);
 
-        // Maak de interaction entity
-        interactionEntity = new Entity(EntityType.INTERACTION);
-        interactionEntity.setInstance(this.getInstance(), position);
-        interactionEntity.setBoundingBox(.5f, .5f, .5f); // Zelfde grootte als de bal
+        this.setInstance(instance, position);
 
-        // Instellingen voor de display entity
+        interactionEntity = new Entity(EntityType.INTERACTION);
+        interactionEntity.setInstance(instance, position);
+        interactionEntity.setBoundingBox(.5f, .5f, .5f);
+
         BlockDisplayMeta meta = (BlockDisplayMeta) this.getEntityMeta();
         meta.setBlockState(Block.STONE);
-        meta.setScale(new Vec(0.5f, 0.5f, 0.5f)); // Schaal van de display entity
+        meta.setScale(new Vec(.5f, .5f, .5f));
 
         this.setNoGravity(false);
         this.setBoundingBox(.5f, .5f, .5f);
 
-        // Synchroniseer de positie van de display entity en de interaction entity
         mainTask = MinecraftServer.getSchedulerManager().buildTask(() -> {
             if (this.isRemoved()) {
                 mainTask.cancel();
@@ -57,8 +54,7 @@ public class BallBehavior extends Entity implements BallEntity {
                 return;
             }
 
-            // Synchroniseer de positie
-            interactionEntity.teleport(this.getPosition());
+            interactionEntity.setVelocity(this.getVelocity());
             this.checkForCollisions();
         }).repeat(1, TimeUnit.SERVER_TICK).schedule();
     }
@@ -76,12 +72,12 @@ public class BallBehavior extends Entity implements BallEntity {
         // Calculate the power of the kick
         power = Math.max(0, Math.min(power, 10));
 
-        if (!kicker.isOnGround()) {
+        if (!kicker.isOnGround() || power == 10) {
             Random random = new Random();
             float chance = random.nextFloat();
 
             // Get super kick chance
-            if (chance < 0.33f) {
+            if (chance < 0.33f || power == 10) {
                 ParticlePacket packet = new ParticlePacket(
                         Particle.CRIT,
                         false,
@@ -106,11 +102,13 @@ public class BallBehavior extends Entity implements BallEntity {
 
         // Apply the force to the ball
         Vec force = new Vec(direction.x() * horizontalForce, verticalForce, direction.z() * horizontalForce);
-        ballEntity.setVelocity(force);
+
+        this.setVelocity(force);
+        interactionEntity.setVelocity(force);
 
         Vec finalDirection = direction;
 
-        // Schedule the task to apply friction and bounce
+        // Schedule the task to apply friction and bounce the ball
         velocityTask = MinecraftServer.getSchedulerManager().buildTask(() -> { // TODO: Make async
                     if (this.isOnGround() && isKicked) {
                         // Apply bounce effect
@@ -120,7 +118,9 @@ public class BallBehavior extends Entity implements BallEntity {
 
                         MinecraftServer.getSchedulerManager().buildTask(() -> {
                             this.setVelocity(Vec.ZERO);
+                            interactionEntity.setVelocity(Vec.ZERO);
                             this.setVelocity(newForce);
+                            interactionEntity.setVelocity(newForce);
                         });
 
                         isKicked = false;

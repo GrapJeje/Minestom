@@ -15,8 +15,8 @@ public class PlayerEntityInteractListener implements EventListener<PlayerEntityI
 
         if (player.getGameMode() == GameMode.SPECTATOR) return;
         if (BallBehavior.Cooldown.isPlayerOnCooldown(player)) return;
-        if (!(entity instanceof BallEntity)) return;
 
-        BallBehavior.instance.kick(entity, player);
+        BallEntity ball = BallEntity.findBallInstance(entity);
+        if (ball != null) ball.kick(entity, player);
     }
 }

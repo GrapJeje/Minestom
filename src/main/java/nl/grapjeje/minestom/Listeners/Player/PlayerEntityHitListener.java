@@ -14,7 +14,6 @@ public class PlayerEntityHitListener implements EventListener<EntityAttackEvent>
     @Override
     public void run(EntityAttackEvent e) {
         Entity damagedEntity = e.getTarget();
-        if (!(damagedEntity instanceof BallEntity)) return;
 
         Entity damager = e.getEntity();
         if (!(damager instanceof Player player)) return;
@@ -22,6 +21,7 @@ public class PlayerEntityHitListener implements EventListener<EntityAttackEvent>
         if (player.getGameMode() == GameMode.SPECTATOR) return;
         if (BallBehavior.Cooldown.isPlayerOnCooldown(player)) return;
 
-        BallBehavior.instance.kick(damagedEntity, player);
+        BallEntity ball = BallEntity.findBallInstance(damagedEntity);
+        if (ball != null) ball.kick(damagedEntity, player);
     }
 }
