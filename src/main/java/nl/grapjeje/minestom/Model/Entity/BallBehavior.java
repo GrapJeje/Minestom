@@ -97,8 +97,8 @@ public class BallBehavior extends Entity implements BallEntity {
         Vec direction = kicker.getPosition().direction();
         direction = new Vec(direction.x(), 0, direction.z()).normalize();
 
-        float horizontalForce = power * 1.2f;
-        float verticalForce = power * 0.8f;
+        float horizontalForce = power * 2.4f;
+        float verticalForce = power * 1.6f;
 
         // Apply the force to the ball
         Vec force = new Vec(direction.x() * horizontalForce, verticalForce, direction.z() * horizontalForce);
@@ -154,11 +154,11 @@ public class BallBehavior extends Entity implements BallEntity {
     public float getKickPower(Player kicker) {
         final Random random = new Random();
 
-        if (kicker == null) return random.nextFloat(0.1f, 10);
+        if (kicker == null) return random.nextFloat(1f, 10);
 
         return kicker.isSprinting() ? random.nextFloat(5, 10)
-                : kicker.isSneaking() ? random.nextFloat(0.1f, 5)
-                : random.nextFloat(0.1f, 10);
+                : kicker.isSneaking() ? random.nextFloat(1f, 5)
+                : random.nextFloat(0.1f, 8);
     }
 
     @Override
