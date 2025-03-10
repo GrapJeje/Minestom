@@ -43,7 +43,6 @@ class ServerSetup {
     public void registerListeners() {
         eventHandler = MinecraftServer.getGlobalEventHandler();
 
-        this.registerListener(EntityTickEvent.class, new PlayerEntityCollideListener());
         this.registerListener(EntityAttackEvent.class, new PlayerEntityHitListener());
         this.registerListener(PlayerEntityInteractEvent.class, new PlayerEntityInteractListener());
         this.registerListener(AsyncPlayerConfigurationEvent.class, new PlayerJoinListener());
