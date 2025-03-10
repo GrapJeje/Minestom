@@ -2,6 +2,7 @@ package nl.grapjeje.minestom.Model.Entity;
 
 import net.kyori.adventure.text.format.TextColor;
 import net.minestom.server.MinecraftServer;
+import net.minestom.server.collision.BoundingBox;
 import net.minestom.server.coordinate.*;
 import net.minestom.server.entity.*;
 import net.minestom.server.entity.metadata.display.BlockDisplayMeta;
@@ -130,23 +131,27 @@ public class BallBehavior extends Entity implements BallEntity {
 
     @Override
     public void collide(Player player) {
-        Vec ballVelocity = this.getVelocity();
-        Vec playerVelocity = player.getVelocity();
-
-        Vec relativeVelocity = ballVelocity.sub(playerVelocity);
-
-        Vec newVelocity = relativeVelocity.mul(-0.5);
-        this.setVelocity(newVelocity);
+        this.setVelocity(this, player, 4, false);
     }
 
     @Override
     public void checkForCollisions() {
-        for (Entity entity : this.getInstance().getEntities()) {
-            if (!(entity instanceof Player)) continue;
-            Point relativePosition = entity.getPosition().sub(this.getPosition());
+        Instance instance = this.getInstance();
+        if (instance == null) return;
 
-            // Check if the bounding boxes collide
-            if (this.getBoundingBox().intersectBox(relativePosition, entity.getBoundingBox())) {
+        BoundingBox ballBoundingBox = this.getBoundingBox();
+        Pos ballPosition = this.getPosition();
+
+        for (Entity entity : instance.getEntities()) {
+            if (!(entity instanceof Player)) continue;
+
+            BoundingBox playerBoundingBox = entity.getBoundingBox();
+            Pos playerPosition = entity.getPosition();
+
+            Point relativePosition = playerPosition.sub(ballPosition);
+
+            // Check if the bounding boxes intersect
+            if (ballBoundingBox.intersectBox(relativePosition, playerBoundingBox)) {
                 this.collide((Player) entity);
             }
         }
