@@ -170,6 +170,7 @@ public class BallBehavior extends Entity implements BallEntity {
     private final double friction = 0.05;
     private final double speedMultiplier = 1.05;
     private final double bounceFactor = 1.5;
+    private final double rotationSpeed = 1.6;
 
     public void updateVelocity() {
         Vec velocity = this.getVelocity();
@@ -189,6 +190,21 @@ public class BallBehavior extends Entity implements BallEntity {
         velocityY -= gravity;
 
         this.setVelocity(new Vec(velocityX, velocityY, velocityZ));
+
+        // Update the rotation of the ball
+        this.updateRotation(velocityX, velocityZ);
+    }
+
+    public void updateRotation(double velocityX, double velocityZ) {
+        // Calculate the rotation based on the velocity
+        double rotationX = this.getPosition().pitch() + velocityZ * rotationSpeed;
+        double rotationY = this.getPosition().yaw() + velocityX * rotationSpeed;
+
+        // Normalize the rotation to keep it within 0-360 degrees
+        rotationX = rotationX % 360;
+        rotationY = rotationY % 360;
+
+        this.teleport(new Pos(this.getPosition().x(), this.getPosition().y(), this.getPosition().z(), (float) rotationY, (float) rotationX));
     }
 
     public void onGround() {
