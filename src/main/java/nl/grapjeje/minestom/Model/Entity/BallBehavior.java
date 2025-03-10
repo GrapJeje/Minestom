@@ -3,15 +3,12 @@ package nl.grapjeje.minestom.Model.Entity;
 import net.kyori.adventure.text.format.TextColor;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.*;
-import net.minestom.server.entity.Entity;
-import net.minestom.server.entity.EntityType;
-import net.minestom.server.entity.Player;
+import net.minestom.server.entity.*;
 import net.minestom.server.entity.metadata.display.BlockDisplayMeta;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.network.packet.server.play.ParticlePacket;
 import net.minestom.server.particle.Particle;
-import net.minestom.server.timer.Task;
 import net.minestom.server.utils.time.TimeUnit;
 import nl.grapjeje.minestom.Server;
 import nl.grapjeje.minestom.Util.Text;
@@ -21,12 +18,7 @@ import java.util.*;
 public class BallBehavior extends Entity implements BallEntity {
     public static final List<BallEntity> ballEntities = new ArrayList<>();
     private final Entity interactionEntity;
-
-    // Physics constants
-    private final double gravity = 0.08;
-    private final double airResistance = 0.01;
-    private final double friction = 0.05;
-    private final double speedMultiplier = 1.05;
+    private boolean isKicked = false;
 
     public BallBehavior(Pos position, Instance instance) {
         super(EntityType.BLOCK_DISPLAY);
@@ -133,6 +125,7 @@ public class BallBehavior extends Entity implements BallEntity {
             return;
         }
 
+        isKicked = true;
         this.setVelocity(ballEntity, kicker, power, true);
     }
 
@@ -171,6 +164,13 @@ public class BallBehavior extends Entity implements BallEntity {
         }
     }
 
+    // Physics constants
+    private final double gravity = 0.08;
+    private final double airResistance = 0.01;
+    private final double friction = 0.05;
+    private final double speedMultiplier = 1.05;
+    private final double bounceFactor = 1.5;
+
     public void updateVelocity() {
         Vec velocity = this.getVelocity();
         double velocityX = velocity.x();
@@ -194,13 +194,20 @@ public class BallBehavior extends Entity implements BallEntity {
     public void onGround() {
         Vec velocity = this.getVelocity();
         double velocityX = velocity.x();
+        double velocityY = velocity.y();
         double velocityZ = velocity.z();
 
         // Apply friction
         velocityX *= (1 - friction);
         velocityZ *= (1 - friction);
 
-        this.setVelocity(new Vec(velocityX, velocity.y(), velocityZ));
+        // Apply bounce effect
+        if (velocityY < 0 && isKicked) {
+            velocityY = -velocityY * bounceFactor;
+            isKicked = false;
+        }
+
+        this.setVelocity(new Vec(velocityX, velocityY, velocityZ));
     }
 
     @Override
@@ -213,7 +220,7 @@ public class BallBehavior extends Entity implements BallEntity {
         // Check for collisions
         this.checkForCollisions();
 
-        // Check if the ball is on the ground and apply friction
+        // Check if the ball is on the ground and apply friction + bounce
         if (this.isOnGround()) {
             this.onGround();
         }
