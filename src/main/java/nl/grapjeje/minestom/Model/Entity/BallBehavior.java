@@ -42,18 +42,6 @@ public class BallBehavior extends Entity implements BallEntity {
         this.setNoGravity(false);
         this.setBoundingBox(width, height, depth);
 
-        // Sync the position of the interaction entity with the BlockDisplay
-        MinecraftServer.getSchedulerManager().buildTask(() -> {
-            if (this.isRemoved()) {
-                interactionEntity.remove();
-                return;
-            }
-
-            // Sync the position of the interaction entity with the BlockDisplay
-            interactionEntity.teleport(this.getPosition());
-            interactionEntity.setVelocity(this.getVelocity());
-        }).repeat(1, TimeUnit.SERVER_TICK).schedule();
-
         ballEntities.add(this);
     }
 
@@ -201,10 +189,9 @@ public class BallBehavior extends Entity implements BallEntity {
         double rotationY = this.getPosition().yaw() + velocityX * rotationSpeed;
 
         // Normalize the rotation to keep it within 0-360 degrees
-        rotationX = rotationX % 360;
         rotationY = rotationY % 360;
 
-        this.teleport(new Pos(this.getPosition().x(), this.getPosition().y(), this.getPosition().z(), (float) rotationY, (float) rotationX));
+        this.teleport(new Pos(this.getPosition().x(), this.getPosition().y(), this.getPosition().z(), (float) rotationY, 0));
     }
 
     public void onGround() {
@@ -240,6 +227,15 @@ public class BallBehavior extends Entity implements BallEntity {
         if (this.isOnGround()) {
             this.onGround();
         }
+
+        if (this.isRemoved()) {
+            interactionEntity.remove();
+            return;
+        }
+
+        // Sync the position of the interaction entity with the BlockDisplay
+        interactionEntity.teleport(this.getPosition());
+        interactionEntity.setVelocity(this.getVelocity());
     }
 
     /**
